@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Apoio Bibliográfico para PFCs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Sistema de Apoio Bibliográfico para PFCs</h1>
+
+        <div id="areaLogin">
+
+            <h2>Login</h2>
+
+            <form id="formLogin">
+
+                <label for="emailLogin">E-mail:</label>
+                <input type="email" id="emailLogin" required>
+
+                <label for="senhaLogin">Senha:</label>
+                <input type="password" id="senhaLogin" required>
+
+                <button type="submit">Entrar</button>
+
+            </form>
+
+            <p id="mensagemLogin"></p>
+
+        </div>
+
+        <div id="areaCadastroUsuario">
+
+            <h2>Criar Conta</h2>
+
+            <form id="formUsuario">
+
+                <label for="nome">Nome:</label>
+                <input type="text" id="nome" required>
+
+                <label for="email">E-mail:</label>
+                <input type="email" id="email" required>
+
+                <label for="senha">Senha:</label>
+                <input type="password" id="senha" minlength="8" required>
+                <label>
+                    <input type="checkbox" id="aceite" required>
+
+                    Li e concordo com o
+                    <a href="termo-aceite.html" target="_blank">
+                     Termo de Aceite
+                    </a>
+                    e estou ciente da
+                    <a href="politica-privacidade.html" target="_blank">
+                    Política de Privacidade
+                    </a>.
+                </label>
+                
+                <button type="submit">Criar Conta</button>
+
+            </form>
+
+            <p id="mensagemCadastro"></p>
+
+        </div>
+
+        <div id="areaSistema" style="display: none;">
+
+            <p id="usuarioLogado"></p>
+
+            <button type="button" id="logoutBtn">
+                Sair
+            </button>
+
+            <hr>
+
+            <h2>Cadastro do Projeto de Final de Curso</h2>
+
+            <form id="formPfc">
+
+                <label for="nome_aluno">Nome do aluno:</label>
+                <input type="text" id="nome_aluno" required>
+
+                <label for="curso">Curso:</label>
+                <input type="text" id="curso" required>
+
+                <label for="disciplina">Disciplina:</label>
+                <input type="text" id="disciplina" required>
+
+                <label for="tema">Tema do PFC:</label>
+                <input type="text" id="tema" required>
+
+                <label for="area_conhecimento">Área de conhecimento:</label>
+                <input type="text" id="area_conhecimento" required>
+
+                <label for="palavras_chave">Palavras-chave:</label>
+                <input type="text" id="palavras_chave" required>
+
+                <button type="submit">Cadastrar PFC</button>
+
+            </form>
+
+            <p id="mensagem"></p>
+
+            <hr>
+
+            <h2>Meus PFCs</h2>
+
+            <button type="button" id="btnMeusPfcs">
+                Consultar Meus PFCs
+            </button>
+
+            <div id="meusPfcs"></div>
+
+            <hr>
+
+            <h2>Busca Bibliográfica</h2>
+
+            <form id="formBusca">
+
+                <label for="temaBusca">Tema ou palavra-chave:</label>
+                <input type="text" id="temaBusca" required>
+
+                <button type="submit">
+                    Buscar Bibliografia
+                </button>
+
+            </form>
+
+            <div id="resultadosBibliografia"></div>
+
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
