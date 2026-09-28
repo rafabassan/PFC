@@ -1,28 +1,37 @@
-const API = "http://localhost:3000";
+const API = "http://localhost:3001";
+let desafio2fa = null;
 
-const areaLogin = document.getElementById("areaLogin");
-const areaCadastroUsuario = document.getElementById("areaCadastroUsuario");
-const areaSistema = document.getElementById("areaSistema");
+const $ = (id) => document.getElementById(id);
 
-const formLogin = document.getElementById("formLogin");
-const formUsuario = document.getElementById("formUsuario");
-const formPfc = document.getElementById("formPfc");
+const areaLogin = $("areaLogin");
+const areaCadastroUsuario = $("areaCadastroUsuario");
+const areaSistema = $("areaSistema");
 
-const mensagemLogin = document.getElementById("mensagemLogin");
-const mensagemCadastro = document.getElementById("mensagemCadastro");
-const mensagem = document.getElementById("mensagem");
+const formLogin = $("formLogin");
+const formUsuario = $("formUsuario");
+const formPfc = $("formPfc");
+const formBusca = $("formBusca");
 
-const usuarioLogado = document.getElementById("usuarioLogado");
-const logoutBtn = document.getElementById("logoutBtn");
+const mensagemLogin = $("mensagemLogin");
+const mensagemCadastro = $("mensagemCadastro");
+const mensagem = $("mensagem");
 
-const btnMeusPfcs = document.getElementById("btnMeusPfcs");
-const meusPfcs = document.getElementById("meusPfcs");
-
-const formBusca = document.getElementById("formBusca");
-const resultadosBibliografia = document.getElementById("resultadosBibliografia");
+const usuarioLogado = $("usuarioLogado");
+const logoutBtn = $("logoutBtn");
+const btnMeusPfcs = $("btnMeusPfcs");
+const meusPfcs = $("meusPfcs");
+const resultadosBibliografia = $("resultadosBibliografia");
 
 function obterToken() {
     return sessionStorage.getItem("token");
+}
+
+async function lerResposta(resposta) {
+    try {
+        return await resposta.json();
+    } catch {
+        return {};
+    }
 }
 
 function mostrarSistema(usuario) {
@@ -40,6 +49,412 @@ function mostrarLogin() {
     areaSistema.style.display = "none";
 }
 
+function adicionarTexto(elementoPai, tag, texto) {
+    const elemento = document.createElement(tag);
+    elemento.textContent = texto;
+    elementoPai.appendChild(elemento);
+    return elemento;
+}
+
+/* Cadastro de usuário e registro do aceite */
+formUsuario.addEventListener("submit", async function(evento) {
+    evento.preventDefault();
+
+    const dados = {
+        nome: $("nome").value.trim(),
+        email: $("email").value.trim(),
+        senha: $("senha").value,
+        aceite: $("aceite").checked
+    };
+
+    try {
+        const resposta = await fetch(`${API}/usuarios`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(dados)
+        });
+
+        const textoResposta = await resposta.text();
+        let resultado = {};
+
+        try {
+        resultado = JSON.parse(textoResposta);
+        } catch {resultado.mensagem = textoResposta;}
+        mensagemCadastro.textContent = resultado.mensagem || "";
+
+        if (resposta.ok) {
+            const emailCadastrado = dados.email;
+            formUsuario.reset();
+            $("emailLogin").value = emailCadastrado;
+        }
+    } catch (erro) {
+        console.error("Erro no cadastro:", erro);
+        mensagemCadastro.textContent =
+            "Não foi possível conectar ao servidor.";
+    }
+});
+
+/* Login: senha primeiro; código autenticador na segunda etapa */
+formLogin.addEventListener("submit", async function(evento) {
+    evento.preventDefault();
+
+    const segundaEtapa = Boolean(desafio2fa);
+    const rota = segundaEtapa
+        ? `${API}/login/2fa`
+        : `${API}/login`;
+
+    const dados = segundaEtapa
+        ? {
+            desafio: desafio2fa,
+            codigo: $("codigo2fa").value.trim()
+        }
+        : {
+            email: $("emailLogin").value.trim(),
+            senha: $("senhaLogin").value
+        };
+
+    const botaoEntrar = formLogin.querySelector(
+        'button[type="submit"]'
+    );
+
+    try {
+        if (botaoEntrar) {
+            botaoEntrar.disabled = true;
+        }
+
+        const resposta = await fetch(rota, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(dados)
+        });
+
+        const resultado = await lerResposta(resposta);
+
+        if (!resposta.ok) {mensagemLogin.textContent =
+        `Diagnóstico: HTTP ${resposta.status} — ${JSON.stringify(resultado)}`;
+        return;
+}
+
+        if (resultado.requer2fa) {
+            desafio2fa = resultado.desafio;
+
+            $("areaCodigo2fa").style.display = "block";
+            $("codigo2fa").required = true;
+            $("codigo2fa").focus();
+
+            mensagemLogin.textContent = resultado.mensagem;
+            return;
+        }
+
+        sessionStorage.setItem("token", resultado.token);
+        desafio2fa = null;
+
+        formLogin.reset();
+        $("areaCodigo2fa").style.display = "none";
+        $("codigo2fa").required = false;
+
+        mensagemLogin.textContent = "";
+        mostrarSistema(resultado.usuario);
+    } catch (erro) {
+        console.error("Erro no login:", erro);
+        mensagemLogin.textContent =
+            "Não foi possível conectar ao servidor.";
+    } finally {
+        if (botaoEntrar) {
+            botaoEntrar.disabled = false;
+        }
+    }
+});
+
+/* Iniciar configuração do aplicativo autenticador */
+const btnIniciar2fa = $("btnIniciar2fa");
+
+if (btnIniciar2fa) {
+    btnIniciar2fa.addEventListener("click", async function() {
+        const mensagem2fa = $("mensagem2fa");
+
+        try {
+            const resposta = await fetch(`${API}/me/2fa/iniciar`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${obterToken()}`
+                }
+            });
+
+            const resultado = await lerResposta(resposta);
+
+            if (!resposta.ok) {
+                mensagem2fa.textContent =
+                    resultado.mensagem || "Não foi possível iniciar o 2FA.";
+                return;
+            }
+
+            $("segredo2fa").textContent = resultado.segredo;
+            $("passos2fa").style.display = "block";
+            mensagem2fa.textContent =
+                "Cadastre a chave no aplicativo autenticador e informe o código.";
+        } catch (erro) {
+            console.error("Erro ao iniciar 2FA:", erro);
+            mensagem2fa.textContent =
+                "Não foi possível conectar ao servidor.";
+        }
+    });
+}
+
+/* Confirmar e ativar o 2FA */
+const formConfirmar2fa = $("formConfirmar2fa");
+
+if (formConfirmar2fa) {
+    formConfirmar2fa.addEventListener("submit", async function(evento) {
+        evento.preventDefault();
+
+        const mensagem2fa = $("mensagem2fa");
+        const codigo = $("codigoConfirmacao2fa").value.trim();
+
+        try {
+            const resposta = await fetch(`${API}/me/2fa/confirmar`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${obterToken()}`
+                },
+                body: JSON.stringify({ codigo })
+            });
+
+            const resultado = await lerResposta(resposta);
+            mensagem2fa.textContent =
+                resultado.mensagem || "";
+
+            if (resposta.ok) {
+                $("passos2fa").style.display = "none";
+                $("btnIniciar2fa").disabled = true;
+                $("btnIniciar2fa").textContent = "2FA ativado";
+            }
+        } catch (erro) {
+            console.error("Erro ao confirmar 2FA:", erro);
+            mensagem2fa.textContent =
+                "Não foi possível conectar ao servidor.";
+        }
+    });
+}
+
+/* Encerrar sessão */
+logoutBtn.addEventListener("click", async function() {
+    const token = obterToken();
+
+    try {
+        if (token) {
+            await fetch(`${API}/logout`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+        }
+    } catch (erro) {
+        console.error("Erro ao sair:", erro);
+    }
+
+    sessionStorage.removeItem("token");
+    desafio2fa = null;
+    mostrarLogin();
+    mensagemLogin.textContent = "Sessão encerrada.";
+});
+
+/* Cadastrar PFC */
+formPfc.addEventListener("submit", async function(evento) {
+    evento.preventDefault();
+
+    const token = obterToken();
+
+    if (!token) {
+        mensagem.textContent = "Faça login para cadastrar um PFC.";
+        return;
+    }
+
+    const dados = {
+        nome_aluno: $("nome_aluno").value.trim(),
+        curso: $("curso").value.trim(),
+        disciplina: $("disciplina").value.trim(),
+        tema: $("tema").value.trim(),
+        area_conhecimento: $("area_conhecimento").value.trim(),
+        palavras_chave: $("palavras_chave").value.trim()
+    };
+
+    try {
+        const resposta = await fetch(`${API}/pfc`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify(dados)
+        });
+
+        const resultado = await lerResposta(resposta);
+
+        if (resposta.ok) {
+            mensagem.textContent =
+                `${resultado.mensagem} ID: ${resultado.id}`;
+            formPfc.reset();
+        } else {
+            mensagem.textContent =
+                resultado.mensagem || "Não foi possível salvar o PFC.";
+        }
+    } catch (erro) {
+        console.error("Erro ao cadastrar PFC:", erro);
+        mensagem.textContent =
+            "Não foi possível conectar ao servidor.";
+    }
+});
+
+/* Consultar PFCs do usuário */
+btnMeusPfcs.addEventListener("click", async function() {
+    const token = obterToken();
+
+    if (!token) {
+        meusPfcs.textContent = "Faça login primeiro.";
+        return;
+    }
+
+    try {
+        const resposta = await fetch(`${API}/meus-pfcs`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        const dados = await lerResposta(resposta);
+        meusPfcs.replaceChildren();
+
+        if (!resposta.ok) {
+            meusPfcs.textContent =
+                dados.mensagem || "Não foi possível consultar os PFCs.";
+            return;
+        }
+
+        if (dados.length === 0) {
+            adicionarTexto(meusPfcs, "p", "Nenhum PFC cadastrado.");
+            return;
+        }
+
+        dados.forEach(function(pfc) {
+            const div = document.createElement("div");
+
+            adicionarTexto(div, "h3", pfc.tema);
+            adicionarTexto(div, "p", `Aluno: ${pfc.nome_aluno}`);
+            adicionarTexto(div, "p", `Curso: ${pfc.curso}`);
+            adicionarTexto(div, "p", `Disciplina: ${pfc.disciplina}`);
+            adicionarTexto(div, "p", `Área: ${pfc.area_conhecimento}`);
+            adicionarTexto(div, "p", `Palavras-chave: ${pfc.palavras_chave}`);
+
+            meusPfcs.appendChild(div);
+        });
+    } catch (erro) {
+        console.error("Erro ao consultar PFCs:", erro);
+        meusPfcs.textContent =
+            "Não foi possível consultar os PFCs.";
+    }
+});
+
+/* Buscar referências na API OpenAlex */
+formBusca.addEventListener("submit", async function(evento) {
+    evento.preventDefault();
+
+    const token = obterToken();
+    const tema = $("temaBusca").value.trim();
+
+    if (!token) {
+        resultadosBibliografia.textContent =
+            "Faça login para realizar a busca.";
+        return;
+    }
+
+    if (!tema) {
+        resultadosBibliografia.textContent =
+            "Digite um tema ou palavra-chave.";
+        return;
+    }
+
+    resultadosBibliografia.textContent = "Buscando referências...";
+
+    try {
+        const resposta = await fetch(
+            `${API}/api/bibliografia?tema=${encodeURIComponent(tema)}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
+        );
+
+        const dados = await lerResposta(resposta);
+        resultadosBibliografia.replaceChildren();
+
+        if (!resposta.ok) {
+            resultadosBibliografia.textContent =
+                dados.mensagem || "Erro ao realizar a busca.";
+            return;
+        }
+
+        const resultados = dados.resultados || [];
+
+        if (resultados.length === 0) {
+            adicionarTexto(
+                resultadosBibliografia,
+                "p",
+                "Nenhuma referência encontrada."
+            );
+            return;
+        }
+
+        resultados.forEach(function(item) {
+            const div = document.createElement("div");
+
+            adicionarTexto(
+                div,
+                "h3",
+                item.titulo || "Título não informado"
+            );
+            adicionarTexto(
+                div,
+                "p",
+                `Autores: ${item.autores || "Autor não informado"}`
+            );
+            adicionarTexto(
+                div,
+                "p",
+                `Ano: ${item.ano || "Ano não informado"}`
+            );
+            adicionarTexto(
+                div,
+                "p",
+                `DOI: ${item.doi || "Não informado"}`
+            );
+
+            if (item.url && item.url.startsWith("https://")) {
+                const link = document.createElement("a");
+                link.href = item.url;
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+                link.textContent = "Ver publicação";
+                div.appendChild(link);
+            }
+
+            resultadosBibliografia.appendChild(div);
+        });
+    } catch (erro) {
+        console.error("Erro na busca bibliográfica:", erro);
+        resultadosBibliografia.textContent =
+            "Não foi possível realizar a busca.";
+    }
+});
+
+/* Restaurar a sessão ao abrir a página */
 async function carregarUsuario() {
     const token = obterToken();
 
@@ -61,292 +476,12 @@ async function carregarUsuario() {
             return;
         }
 
-        const usuario = await resposta.json();
+        const usuario = await lerResposta(resposta);
         mostrarSistema(usuario);
-
     } catch (erro) {
-        console.error(erro);
+        console.error("Erro ao carregar usuário:", erro);
         mostrarLogin();
     }
 }
-
-formUsuario.addEventListener("submit", async function(evento) {
-    evento.preventDefault();
-
-    const dados = {
-        nome: document.getElementById("nome").value,
-        email: document.getElementById("email").value,
-        senha: document.getElementById("senha").value
-    };
-
-    try {
-        const resposta = await fetch(`${API}/usuarios`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(dados)
-        });
-
-        const resultado = await resposta.json();
-
-        mensagemCadastro.textContent = resultado.mensagem;
-
-        if (resposta.ok) {
-            formUsuario.reset();
-        }
-
-    } catch (erro) {
-        console.error(erro);
-        mensagemCadastro.textContent =
-            "Não foi possível conectar ao servidor.";
-    }
-});
-
-formLogin.addEventListener("submit", async function(evento) {
-    evento.preventDefault();
-
-    const dados = {
-        email: document.getElementById("emailLogin").value,
-        senha: document.getElementById("senhaLogin").value
-    };
-
-    try {
-        const resposta = await fetch(`${API}/login`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(dados)
-        });
-
-        const resultado = await resposta.json();
-
-        if (!resposta.ok) {
-            mensagemLogin.textContent = resultado.mensagem;
-            return;
-        }
-
-        sessionStorage.setItem("token", resultado.token);
-
-        mensagemLogin.textContent = "";
-
-        mostrarSistema(resultado.usuario);
-
-        formLogin.reset();
-
-    } catch (erro) {
-        console.error(erro);
-        mensagemLogin.textContent =
-            "Não foi possível conectar ao servidor.";
-    }
-});
-
-logoutBtn.addEventListener("click", async function() {
-    const token = obterToken();
-
-    try {
-        if (token) {
-            await fetch(`${API}/logout`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-        }
-    } catch (erro) {
-        console.error(erro);
-    }
-
-    sessionStorage.removeItem("token");
-
-    mostrarLogin();
-
-    mensagemLogin.textContent = "Sessão encerrada.";
-});
-
-formPfc.addEventListener("submit", async function(evento) {
-    evento.preventDefault();
-
-    const token = obterToken();
-
-    if (!token) {
-        mensagem.textContent = "Faça login para cadastrar um PFC.";
-        return;
-    }
-
-    const dados = {
-        nome_aluno: document.getElementById("nome_aluno").value,
-        curso: document.getElementById("curso").value,
-        disciplina: document.getElementById("disciplina").value,
-        tema: document.getElementById("tema").value,
-        area_conhecimento: document.getElementById("area_conhecimento").value,
-        palavras_chave: document.getElementById("palavras_chave").value
-    };
-
-    try {
-        const resposta = await fetch(`${API}/pfc`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify(dados)
-        });
-
-        const resultado = await resposta.json();
-
-        if (resposta.ok) {
-            mensagem.textContent =
-                resultado.mensagem + " ID: " + resultado.id;
-
-            formPfc.reset();
-        } else {
-            mensagem.textContent = resultado.mensagem;
-        }
-
-    } catch (erro) {
-        console.error(erro);
-        mensagem.textContent =
-            "Não foi possível conectar ao servidor.";
-    }
-});
-
-btnMeusPfcs.addEventListener("click", async function() {
-    const token = obterToken();
-
-    if (!token) {
-        meusPfcs.textContent = "Faça login primeiro.";
-        return;
-    }
-
-    try {
-        const resposta = await fetch(`${API}/meus-pfcs`, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
-
-        const dados = await resposta.json();
-
-        if (!resposta.ok) {
-            meusPfcs.textContent = dados.mensagem;
-            return;
-        }
-
-        if (dados.length === 0) {
-            meusPfcs.innerHTML = "<p>Nenhum PFC cadastrado.</p>";
-            return;
-        }
-
-        meusPfcs.innerHTML = "";
-
-        dados.forEach(function(pfc) {
-            const div = document.createElement("div");
-
-            div.innerHTML = `
-                <h3>${pfc.tema}</h3>
-                <p><strong>Aluno:</strong> ${pfc.nome_aluno}</p>
-                <p><strong>Curso:</strong> ${pfc.curso}</p>
-                <p><strong>Disciplina:</strong> ${pfc.disciplina}</p>
-                <p><strong>Área:</strong> ${pfc.area_conhecimento}</p>
-                <p><strong>Palavras-chave:</strong> ${pfc.palavras_chave}</p>
-                <hr>
-            `;
-
-            meusPfcs.appendChild(div);
-        });
-
-    } catch (erro) {
-        console.error(erro);
-        meusPfcs.textContent =
-            "Não foi possível consultar os PFCs.";
-    }
-});
-
-formBusca.addEventListener("submit", async function(evento) {
-    evento.preventDefault();
-
-    const token = obterToken();
-    const tema = document.getElementById("temaBusca").value.trim();
-
-    if (!token) {
-        resultadosBibliografia.textContent =
-            "Faça login para realizar a busca.";
-        return;
-    }
-
-    if (!tema) {
-        resultadosBibliografia.textContent =
-            "Digite um tema ou palavra-chave.";
-        return;
-    }
-
-    resultadosBibliografia.innerHTML =
-        "<p>Buscando referências...</p>";
-
-    try {
-        const resposta = await fetch(
-            `${API}/api/bibliografia?tema=${encodeURIComponent(tema)}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
-        );
-
-        const dados = await resposta.json();
-
-        if (!resposta.ok) {
-            resultadosBibliografia.textContent =
-                dados.mensagem || "Erro ao realizar a busca.";
-            return;
-        }
-
-        const resultados = dados.resultados || [];
-
-        if (resultados.length === 0) {
-            resultadosBibliografia.innerHTML =
-                "<p>Nenhuma referência encontrada.</p>";
-            return;
-        }
-
-        resultadosBibliografia.innerHTML = "";
-
-        resultados.forEach(function(item) {
-            const div = document.createElement("div");
-
-            div.innerHTML = `
-                <h3>${item.titulo || "Título não informado"}</h3>
-                <p>
-                    <strong>Autores:</strong>
-                    ${item.autores || "Autor não informado"}
-                </p>
-                <p>
-                    <strong>Ano:</strong>
-                    ${item.ano || "Ano não informado"}
-                </p>
-                <p>
-                    <strong>DOI:</strong>
-                    ${item.doi || "Não informado"}
-                </p>
-                <p>
-                    <a href="${item.url}" target="_blank">
-                        Ver publicação
-                    </a>
-                </p>
-                <hr>
-            `;
-
-            resultadosBibliografia.appendChild(div);
-        });
-
-    } catch (erro) {
-        console.error("Erro na busca:", erro);
-
-        resultadosBibliografia.innerHTML =
-            "<p>Não foi possível realizar a busca.</p>";
-    }
-});
 
 carregarUsuario();

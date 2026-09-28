@@ -1,145 +1,214 @@
 <!DOCTYPE html>
-<html lang="pt-br">
-
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Apoio Bibliográfico para PFCs</title>
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
-    <div class="container">
-
+    <main class="container">
         <h1>Sistema de Apoio Bibliográfico para PFCs</h1>
 
-        <div id="areaLogin">
-
+        <section id="areaLogin">
             <h2>Login</h2>
 
             <form id="formLogin">
-
                 <label for="emailLogin">E-mail:</label>
-                <input type="email" id="emailLogin" required>
+                <input
+                    type="email"
+                    id="emailLogin"
+                    autocomplete="email"
+                    required
+                >
 
                 <label for="senhaLogin">Senha:</label>
-                <input type="password" id="senhaLogin" required>
+                <input
+                    type="password"
+                    id="senhaLogin"
+                    autocomplete="current-password"
+                    required
+                >
+
+                <div id="areaCodigo2fa" style="display: none;">
+                    <label for="codigo2fa">
+                        Código do aplicativo autenticador:
+                    </label>
+                    <input
+                        type="text"
+                        id="codigo2fa"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        maxlength="6"
+                        pattern="[0-9]{6}"
+                        placeholder="Digite os 6 números"
+                    >
+                </div>
 
                 <button type="submit">Entrar</button>
-
             </form>
 
-            <p id="mensagemLogin"></p>
+            <p id="mensagemLogin" aria-live="polite"></p>
+        </section>
 
-        </div>
-
-        <div id="areaCadastroUsuario">
-
+        <section id="areaCadastroUsuario">
             <h2>Criar Conta</h2>
 
             <form id="formUsuario">
-
                 <label for="nome">Nome:</label>
-                <input type="text" id="nome" required>
+                <input
+                    type="text"
+                    id="nome"
+                    autocomplete="name"
+                    required
+                >
 
                 <label for="email">E-mail:</label>
-                <input type="email" id="email" required>
+                <input
+                    type="email"
+                    id="email"
+                    autocomplete="email"
+                    required
+                >
 
                 <label for="senha">Senha:</label>
-                <input type="password" id="senha" minlength="8" required>
-                <label>
+                <input
+                    type="password"
+                    id="senha"
+                    minlength="8"
+                    autocomplete="new-password"
+                    required
+                >
+
+                <label for="aceite">
                     <input type="checkbox" id="aceite" required>
-
-                    Li e concordo com o
-                    <a href="termo-aceite.html" target="_blank">
-                     Termo de Aceite
-                    </a>
-                    e estou ciente da
-                    <a href="politica-privacidade.html" target="_blank">
-                    Política de Privacidade
-                    </a>.
+                    Li e concordo com os
+                    <a
+                        href="termo-aceite.html"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >Termos de Uso</a>
+                    e a
+                    <a
+                        href="politica-privacidade.html"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >Política de Privacidade</a>.
                 </label>
-                
-                <button type="submit">Criar Conta</button>
 
+                <button type="submit">Criar Conta</button>
             </form>
 
-            <p id="mensagemCadastro"></p>
+            <p id="mensagemCadastro" aria-live="polite"></p>
+        </section>
 
-        </div>
-
-        <div id="areaSistema" style="display: none;">
-
+        <section id="areaSistema" style="display: none;">
             <p id="usuarioLogado"></p>
 
-            <button type="button" id="logoutBtn">
-                Sair
-            </button>
+            <button type="button" id="logoutBtn">Sair</button>
 
-            <hr>
+            <section>
+                <h2>Autenticação em dois fatores</h2>
 
-            <h2>Cadastro do Projeto de Final de Curso</h2>
-
-            <form id="formPfc">
-
-                <label for="nome_aluno">Nome do aluno:</label>
-                <input type="text" id="nome_aluno" required>
-
-                <label for="curso">Curso:</label>
-                <input type="text" id="curso" required>
-
-                <label for="disciplina">Disciplina:</label>
-                <input type="text" id="disciplina" required>
-
-                <label for="tema">Tema do PFC:</label>
-                <input type="text" id="tema" required>
-
-                <label for="area_conhecimento">Área de conhecimento:</label>
-                <input type="text" id="area_conhecimento" required>
-
-                <label for="palavras_chave">Palavras-chave:</label>
-                <input type="text" id="palavras_chave" required>
-
-                <button type="submit">Cadastrar PFC</button>
-
-            </form>
-
-            <p id="mensagem"></p>
-
-            <hr>
-
-            <h2>Meus PFCs</h2>
-
-            <button type="button" id="btnMeusPfcs">
-                Consultar Meus PFCs
-            </button>
-
-            <div id="meusPfcs"></div>
-
-            <hr>
-
-            <h2>Busca Bibliográfica</h2>
-
-            <form id="formBusca">
-
-                <label for="temaBusca">Tema ou palavra-chave:</label>
-                <input type="text" id="temaBusca" required>
-
-                <button type="submit">
-                    Buscar Bibliografia
+                <button type="button" id="btnIniciar2fa">
+                    Configurar 2FA
                 </button>
 
-            </form>
+                <p id="mensagem2fa" aria-live="polite"></p>
 
-            <div id="resultadosBibliografia"></div>
+                <div id="passos2fa" style="display: none;">
+                    <p>
+                        Adicione esta chave no seu aplicativo autenticador:
+                    </p>
 
-        </div>
+                    <code id="segredo2fa"></code>
 
-    </div>
+                    <form id="formConfirmar2fa">
+                        <label for="codigoConfirmacao2fa">
+                            Digite o código de 6 dígitos do aplicativo:
+                        </label>
+
+                        <input
+                            type="text"
+                            id="codigoConfirmacao2fa"
+                            inputmode="numeric"
+                            maxlength="6"
+                            pattern="[0-9]{6}"
+                            required
+                        >
+
+                        <button type="submit">Ativar 2FA</button>
+                    </form>
+                </div>
+            </section>
+
+            <hr>
+
+            <section>
+                <h2>Cadastro do Projeto de Final de Curso</h2>
+
+                <form id="formPfc">
+                    <label for="nome_aluno">Nome do aluno:</label>
+                    <input type="text" id="nome_aluno" required>
+
+                    <label for="curso">Curso:</label>
+                    <input type="text" id="curso" required>
+
+                    <label for="disciplina">Disciplina:</label>
+                    <input type="text" id="disciplina" required>
+
+                    <label for="tema">Tema do PFC:</label>
+                    <input type="text" id="tema" required>
+
+                    <label for="area_conhecimento">
+                        Área de conhecimento:
+                    </label>
+                    <input
+                        type="text"
+                        id="area_conhecimento"
+                        required
+                    >
+
+                    <label for="palavras_chave">Palavras-chave:</label>
+                    <input type="text" id="palavras_chave" required>
+
+                    <button type="submit">Cadastrar PFC</button>
+                </form>
+
+                <p id="mensagem" aria-live="polite"></p>
+            </section>
+
+            <hr>
+
+            <section>
+                <h2>Meus PFCs</h2>
+
+                <button type="button" id="btnMeusPfcs">
+                    Consultar Meus PFCs
+                </button>
+
+                <div id="meusPfcs"></div>
+            </section>
+
+            <hr>
+
+            <section>
+                <h2>Busca Bibliográfica</h2>
+
+                <form id="formBusca">
+                    <label for="temaBusca">
+                        Tema ou palavra-chave:
+                    </label>
+                    <input type="text" id="temaBusca" required>
+
+                    <button type="submit">Buscar Bibliografia</button>
+                </form>
+
+                <div id="resultadosBibliografia" aria-live="polite"></div>
+            </section>
+        </section>
+    </main>
 
     <script src="script.js"></script>
-
 </body>
-
 </html>
