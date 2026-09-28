@@ -1,0 +1,309 @@
+:root {
+    --verde-escuro: #173b38;
+    --verde: #187b69;
+    --verde-hover: #126354;
+    --menta: #eaf5ef;
+    --texto: #203735;
+    --texto-suave: #71817d;
+    --fundo: #f3f7f3;
+    --branco: #ffffff;
+    --borda: #e2eae4;
+    --sombra: 0 18px 50px rgba(28, 61, 49, 0.09);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    padding: 54px 22px;
+    color: var(--texto);
+    background:
+        radial-gradient(ellipse at 12% 8%, #dcefe3 0, transparent 33%),
+        radial-gradient(ellipse at 92% 88%, #e5eee2 0, transparent 30%),
+        var(--fundo);
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.container {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+    width: min(100%, 1050px);
+    margin: 0 auto;
+}
+
+.container > h1 {
+    grid-column: 1 / -1;
+    margin: 0 0 8px;
+    color: var(--verde-escuro);
+    font-size: clamp(27px, 4vw, 38px);
+    font-weight: 750;
+    letter-spacing: -1.4px;
+    text-align: center;
+}
+
+#areaLogin,
+#areaCadastroUsuario,
+#areaSistema > section {
+    padding: 28px;
+    border: 1px solid rgba(226, 234, 228, 0.9);
+    border-radius: 20px;
+    background: var(--branco);
+    box-shadow: var(--sombra);
+}
+
+#areaLogin h2,
+#areaCadastroUsuario h2,
+#areaSistema h2 {
+    margin: 0 0 18px;
+    color: var(--verde-escuro);
+    font-size: 21px;
+    letter-spacing: -0.4px;
+}
+
+#areaLogin h2::before,
+#areaCadastroUsuario h2::before {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--verde);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.7px;
+    text-transform: uppercase;
+}
+
+#areaLogin h2::before {
+    content: "BEM-VINDA(O) DE VOLTA";
+}
+
+#areaCadastroUsuario h2::before {
+    content: "COMECE SUA PESQUISA";
+}
+
+label {
+    display: block;
+    margin: 15px 0 6px;
+    color: #405450;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+input {
+    width: 100%;
+    min-height: 45px;
+    padding: 10px 13px;
+    border: 1px solid var(--borda);
+    border-radius: 10px;
+    outline: none;
+    background: #fbfdfb;
+    color: var(--texto);
+    font: inherit;
+    transition: border-color 160ms ease, box-shadow 160ms ease,
+        background 160ms ease;
+}
+
+input:focus {
+    border-color: #63a995;
+    background: var(--branco);
+    box-shadow: 0 0 0 4px rgba(24, 123, 105, 0.12);
+}
+
+input::placeholder {
+    color: #a2afaa;
+}
+
+button {
+    min-height: 44px;
+    margin-top: 18px;
+    padding: 10px 17px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--verde);
+    color: white;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 150ms ease, background 150ms ease,
+        box-shadow 150ms ease;
+}
+
+button:hover {
+    transform: translateY(-1px);
+    background: var(--verde-hover);
+    box-shadow: 0 7px 16px rgba(24, 123, 105, 0.2);
+}
+
+button:disabled {
+    transform: none;
+    background: #8caaa0;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+#formLogin > button,
+#formUsuario > button,
+#formPfc > button,
+#formBusca > button {
+    width: 100%;
+}
+
+#areaCadastroUsuario label:has(#aceite) {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+#aceite {
+    width: 17px;
+    min-height: 17px;
+    height: 17px;
+    margin: 3px 0 0;
+    accent-color: var(--verde);
+    flex: 0 0 17px;
+}
+
+a {
+    color: var(--verde);
+    font-weight: 650;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+}
+
+a:hover {
+    color: var(--verde-hover);
+}
+
+#mensagemLogin,
+#mensagemCadastro,
+#mensagem,
+#mensagem2fa {
+    min-height: 20px;
+    margin: 12px 0 0;
+    color: var(--verde-hover);
+    font-size: 13px;
+}
+
+#areaSistema {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 12px;
+}
+
+#areaSistema > #usuarioLogado {
+    align-self: center;
+    margin: 0;
+    color: var(--verde-escuro);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+#areaSistema > #logoutBtn {
+    justify-self: end;
+    margin: 0;
+    border: 1px solid var(--borda);
+    background: var(--branco);
+    color: var(--verde-escuro);
+}
+
+#areaSistema > #logoutBtn:hover {
+    background: var(--menta);
+    box-shadow: none;
+}
+
+#areaSistema > section {
+    min-width: 0;
+}
+
+#areaSistema > hr {
+    display: none;
+}
+
+#areaSistema input {
+    background: #fbfdfb;
+}
+
+#areaSistema section section {
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+}
+
+#areaSistema code {
+    display: inline-block;
+    max-width: 100%;
+    padding: 10px 13px;
+    overflow-wrap: anywhere;
+    border: 1px solid var(--borda);
+    border-radius: 9px;
+    background: var(--menta);
+    color: var(--verde-escuro);
+    font-size: 14px;
+}
+
+#formConfirmar2fa {
+    margin-top: 12px;
+}
+
+#meusPfcs > div,
+#resultadosBibliografia > div {
+    margin-top: 13px;
+    padding: 15px;
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+    background: #fbfdfb;
+}
+
+#meusPfcs h3,
+#resultadosBibliografia h3 {
+    margin: 0 0 8px;
+    color: var(--verde-escuro);
+    font-size: 16px;
+}
+
+#meusPfcs p,
+#resultadosBibliografia p {
+    margin: 5px 0;
+    color: var(--texto-suave);
+    font-size: 13px;
+}
+
+#resultadosBibliografia a {
+    display: inline-block;
+    margin-top: 8px;
+}
+
+@media (max-width: 720px) {
+    body {
+        padding: 30px 15px;
+    }
+
+    .container,
+    #areaSistema {
+        grid-template-columns: 1fr;
+    }
+
+    .container > h1,
+    #areaSistema {
+        grid-column: 1;
+    }
+
+    #areaLogin,
+    #areaCadastroUsuario,
+    #areaSistema > section {
+        padding: 22px;
+    }
+
+    #areaSistema > #usuarioLogado,
+    #areaSistema > #logoutBtn {
+        justify-self: stretch;
+    }
+}
