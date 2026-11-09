@@ -80,21 +80,31 @@
                     required
                 >
 
-                <label for="aceite">
-                    <input type="checkbox" id="aceite" required>
-                    Li e concordo com os
-                    <a
-                        href="termo-aceite.html"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >Termos de Uso</a>
-                    e a
-                    <a
-                        href="politica-privacidade.html"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >Política de Privacidade</a>.
-                </label>
+                <div class="campo-aceite">
+    <label for="aceite_termo">
+        <input
+            type="checkbox"
+            id="aceite_termo"
+            required
+        >
+        Li e aceito o
+        <a href="termo-aceite.html" target="_blank">
+            Termo de Aceite
+        </a>.
+    </label>
+
+    <label for="aceite_privacidade">
+        <input
+            type="checkbox"
+            id="aceite_privacidade"
+            required
+        >
+        Li e aceito a
+        <a href="politica-privacidade.html" target="_blank">
+            Política de Privacidade
+        </a>.
+    </label>
+</div>
 
                 <button type="submit">Criar Conta</button>
             </form>
@@ -106,6 +116,53 @@
             <p id="usuarioLogado"></p>
 
             <button type="button" id="logoutBtn">Sair</button>
+
+            <hr>
+
+    <section id="areaDashboard">
+    <h2>Painel de Indicadores</h2>
+
+    <div class="dashboard-cards">
+        <div class="dashboard-card">
+            <h3>Total de usuários</h3>
+            <p id="totalUsuarios">0</p>
+        </div>
+
+        <div class="dashboard-card">
+            <h3>Total de PFCs</h3>
+            <p id="totalPfcs">0</p>
+        </div>
+
+        <div class="dashboard-card">
+            <h3>Buscas bibliográficas</h3>
+            <p id="totalBuscas">0</p>
+        </div>
+    </div>
+
+    <h3>PFCs por curso</h3>
+
+    <div id="graficoCursos"></div>
+
+    <p id="mensagemDashboard" aria-live="polite"></p>
+</section>
+
+<section id="areaAdminPfcs" style="display: none;">
+    <hr>
+
+    <h2>Gerenciamento de PFCs</h2>
+
+    <p>Visualize os projetos cadastrados pelos alunos.</p>
+
+    <button type="button" id="btnAdminPfcs">
+        Consultar Todos os PFCs
+    </button>
+
+    <div id="listaAdminPfcs"></div>
+
+    <p id="mensagemAdminPfcs" aria-live="polite"></p>
+</section>
+
+<hr>
 
             <section>
                 <h2>Autenticação em dois fatores</h2>

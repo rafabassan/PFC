@@ -41,6 +41,20 @@ function mostrarSistema(usuario) {
 
     usuarioLogado.textContent =
         `Usuário logado: ${usuario.nome} (${usuario.email})`;
+
+    const dashboard = $("areaDashboard");
+
+    if (dashboard) {
+        dashboard.style.display =
+            usuario.perfil === "admin" ? "block" : "none";
+    }
+
+const areaAdminPfcs = $("areaAdminPfcs");
+
+if (areaAdminPfcs) {
+    areaAdminPfcs.style.display =
+        usuario.perfil === "admin" ? "block" : "none";
+}
 }
 
 function mostrarLogin() {
@@ -61,11 +75,30 @@ formUsuario.addEventListener("submit", async function(evento) {
     evento.preventDefault();
 
     const dados = {
-        nome: $("nome").value.trim(),
-        email: $("email").value.trim(),
-        senha: $("senha").value,
-        aceite: $("aceite").checked
-    };
+    nome: $("nome").value.trim(),
+    email: $("email").value.trim().toLowerCase(),
+    senha: $("senha").value,
+    aceite_termo: $("aceite_termo").checked,
+    aceite_privacidade: $("aceite_privacidade").checked
+};
+
+if (!dados.aceite_termo || !dados.aceite_privacidade) {
+    mensagemCadastro.textContent =
+        "Você precisa aceitar o Termo de Aceite e a Política de Privacidade.";
+    return;
+}
+
+if (dados.nome.length < 3) {
+    mensagemCadastro.textContent =
+        "O nome deve possuir pelo menos 3 caracteres.";
+    return;
+}
+
+if (dados.senha.length < 8) {
+    mensagemCadastro.textContent =
+        "A senha deve possuir pelo menos 8 caracteres.";
+    return;
+}
 
     try {
         const resposta = await fetch(`${API}/usuarios`, {
@@ -159,6 +192,7 @@ formLogin.addEventListener("submit", async function(evento) {
 
         mensagemLogin.textContent = "";
         mostrarSistema(resultado.usuario);
+        carregarDashboard();
     } catch (erro) {
         console.error("Erro no login:", erro);
         mensagemLogin.textContent =
@@ -266,6 +300,8 @@ logoutBtn.addEventListener("click", async function() {
 });
 
 /* Cadastrar PFC */
+
+/* Cadastrar PFC */
 formPfc.addEventListener("submit", async function(evento) {
     evento.preventDefault();
 
@@ -285,6 +321,31 @@ formPfc.addEventListener("submit", async function(evento) {
         palavras_chave: $("palavras_chave").value.trim()
     };
 
+    const limites = {
+        nome_aluno: [3, 100],
+        curso: [2, 100],
+        disciplina: [2, 100],
+        tema: [5, 200],
+        area_conhecimento: [3, 100],
+        palavras_chave: [3, 300]
+    };
+
+    for (const campo in dados) {
+        const [minimo, maximo] = limites[campo];
+
+        if (dados[campo].length < minimo) {
+            mensagem.textContent =
+                `O campo ${campo} deve ter pelo menos ${minimo} caracteres.`;
+            return;
+        }
+
+        if (dados[campo].length > maximo) {
+            mensagem.textContent =
+                `O campo ${campo} deve ter no máximo ${maximo} caracteres.`;
+            return;
+        }
+    }
+
     try {
         const resposta = await fetch(`${API}/pfc`, {
             method: "POST",
@@ -300,66 +361,21 @@ formPfc.addEventListener("submit", async function(evento) {
         if (resposta.ok) {
             mensagem.textContent =
                 `${resultado.mensagem} ID: ${resultado.id}`;
+
             formPfc.reset();
         } else {
             mensagem.textContent =
                 resultado.mensagem || "Não foi possível salvar o PFC.";
         }
+
     } catch (erro) {
         console.error("Erro ao cadastrar PFC:", erro);
+
         mensagem.textContent =
             "Não foi possível conectar ao servidor.";
     }
 });
 
-/* Consultar PFCs do usuário */
-btnMeusPfcs.addEventListener("click", async function() {
-    const token = obterToken();
-
-    if (!token) {
-        meusPfcs.textContent = "Faça login primeiro.";
-        return;
-    }
-
-    try {
-        const resposta = await fetch(`${API}/meus-pfcs`, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
-
-        const dados = await lerResposta(resposta);
-        meusPfcs.replaceChildren();
-
-        if (!resposta.ok) {
-            meusPfcs.textContent =
-                dados.mensagem || "Não foi possível consultar os PFCs.";
-            return;
-        }
-
-        if (dados.length === 0) {
-            adicionarTexto(meusPfcs, "p", "Nenhum PFC cadastrado.");
-            return;
-        }
-
-        dados.forEach(function(pfc) {
-            const div = document.createElement("div");
-
-            adicionarTexto(div, "h3", pfc.tema);
-            adicionarTexto(div, "p", `Aluno: ${pfc.nome_aluno}`);
-            adicionarTexto(div, "p", `Curso: ${pfc.curso}`);
-            adicionarTexto(div, "p", `Disciplina: ${pfc.disciplina}`);
-            adicionarTexto(div, "p", `Área: ${pfc.area_conhecimento}`);
-            adicionarTexto(div, "p", `Palavras-chave: ${pfc.palavras_chave}`);
-
-            meusPfcs.appendChild(div);
-        });
-    } catch (erro) {
-        console.error("Erro ao consultar PFCs:", erro);
-        meusPfcs.textContent =
-            "Não foi possível consultar os PFCs.";
-    }
-});
 
 /* Buscar referências na API OpenAlex */
 formBusca.addEventListener("submit", async function(evento) {
@@ -454,6 +470,160 @@ formBusca.addEventListener("submit", async function(evento) {
     }
 });
 
+/* Carregar indicadores do Dashboard */
+async function carregarDashboard() {
+    const token = obterToken();
+
+    if (!token) {
+        return;
+    }
+
+    const mensagemDashboard = $("mensagemDashboard");
+    const graficoCursos = $("graficoCursos");
+
+    mensagemDashboard.textContent = "Carregando indicadores...";
+
+    try {
+        const resposta = await fetch(`${API}/dashboard`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        const dados = await lerResposta(resposta);
+
+        if (!resposta.ok) {
+            mensagemDashboard.textContent =
+                dados.mensagem || "Erro ao carregar Dashboard.";
+            return;
+        }
+
+        $("totalUsuarios").textContent = dados.totalUsuarios;
+        $("totalPfcs").textContent = dados.totalPfcs;
+        $("totalBuscas").textContent = dados.totalBuscas;
+
+        graficoCursos.replaceChildren();
+
+        const cursos = dados.pfcsPorCurso || [];
+
+        if (cursos.length === 0) {
+            graficoCursos.textContent =
+                "Nenhum PFC cadastrado ainda.";
+        } else {
+            const maiorTotal = Math.max(
+                ...cursos.map(item => Number(item.total))
+            );
+
+            cursos.forEach(function(item) {
+                const div = document.createElement("div");
+                div.className = "barra-curso";
+
+                const titulo = document.createElement("p");
+                titulo.textContent =
+                    `${item.curso}: ${item.total} PFC(s)`;
+
+                const fundo = document.createElement("div");
+                fundo.className = "barra-fundo";
+
+                const barra = document.createElement("div");
+                barra.className = "barra-preenchida";
+
+                const percentual =
+                    (Number(item.total) / maiorTotal) * 100;
+
+                barra.style.width = `${percentual}%`;
+
+                fundo.appendChild(barra);
+                div.appendChild(titulo);
+                div.appendChild(fundo);
+                graficoCursos.appendChild(div);
+            });
+        }
+
+        mensagemDashboard.textContent = "";
+
+    } catch (erro) {
+        console.error("Erro no Dashboard:", erro);
+        mensagemDashboard.textContent =
+            "Não foi possível conectar ao servidor.";
+    }
+}
+
+/* Consultar todos os PFCs - Administrador */
+const btnAdminPfcs = $("btnAdminPfcs");
+
+if (btnAdminPfcs) {
+    btnAdminPfcs.addEventListener("click", async function() {
+        const token = obterToken();
+        const lista = $("listaAdminPfcs");
+        const mensagemAdmin = $("mensagemAdminPfcs");
+
+        lista.replaceChildren();
+        mensagemAdmin.textContent = "Carregando projetos...";
+
+        try {
+            const resposta = await fetch(`${API}/admin/pfcs`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            const dados = await lerResposta(resposta);
+
+            if (!resposta.ok) {
+                mensagemAdmin.textContent =
+                    dados.mensagem || "Erro ao consultar PFCs.";
+                return;
+            }
+
+            if (!Array.isArray(dados) || dados.length === 0) {
+                mensagemAdmin.textContent =
+                    "Nenhum PFC cadastrado.";
+                return;
+            }
+
+            const tabela = document.createElement("table");
+
+            const cabecalho = document.createElement("tr");
+
+            ["ID", "Aluno", "Curso", "Tema", "Responsável"].forEach(function(titulo) {
+                const th = document.createElement("th");
+                th.textContent = titulo;
+                cabecalho.appendChild(th);
+            });
+
+            tabela.appendChild(cabecalho);
+
+            dados.forEach(function(pfc) {
+                const linha = document.createElement("tr");
+
+                [
+                    pfc.id,
+                    pfc.nome_aluno,
+                    pfc.curso,
+                    pfc.tema,
+                    pfc.usuario_responsavel || "Não informado"
+                ].forEach(function(valor) {
+                    const td = document.createElement("td");
+                    td.textContent = valor ?? "";
+                    linha.appendChild(td);
+                });
+
+                tabela.appendChild(linha);
+            });
+
+            lista.appendChild(tabela);
+            mensagemAdmin.textContent =
+                `${dados.length} projeto(s) encontrado(s).`;
+
+        } catch (erro) {
+            console.error("Erro ao consultar PFCs:", erro);
+            mensagemAdmin.textContent =
+                "Não foi possível conectar ao servidor.";
+        }
+    });
+}
+
 /* Restaurar a sessão ao abrir a página */
 async function carregarUsuario() {
     const token = obterToken();
@@ -478,10 +648,12 @@ async function carregarUsuario() {
 
         const usuario = await lerResposta(resposta);
         mostrarSistema(usuario);
+        carregarDashboard();
     } catch (erro) {
         console.error("Erro ao carregar usuário:", erro);
         mostrarLogin();
     }
 }
+
 
 carregarUsuario();

@@ -193,14 +193,34 @@ app.get("/", (req, res) => {
 
 
 app.post("/usuarios", async (req, res) => {
-
     try {
-
-        const { nome, email, senha } = req.body;
+        const {
+            nome,
+            email,
+            senha,
+            aceite_termo,
+            aceite_privacidade
+        } = req.body;
 
         if (!nome || !email || !senha) {
             return res.status(400).json({
                 mensagem: "Nome, e-mail e senha são obrigatórios."
+            });
+        }
+
+        if (nome.trim().length < 3 || nome.trim().length > 100) {
+            return res.status(400).json({
+                mensagem: "O nome deve possuir entre 3 e 100 caracteres."
+            });
+        }
+
+        const emailNormalizado = email.trim().toLowerCase();
+
+        const formatoEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!formatoEmail.test(emailNormalizado)) {
+            return res.status(400).json({
+                mensagem: "Informe um e-mail válido."
             });
         }
 
@@ -210,9 +230,15 @@ app.post("/usuarios", async (req, res) => {
             });
         }
 
+        if (aceite_termo !== true || aceite_privacidade !== true) {
+            return res.status(400).json({
+                mensagem: "É necessário aceitar o Termo e a Política de Privacidade."
+            });
+        }
+
         const [usuarioExistente] = await pool.execute(
             "SELECT id FROM usuarios WHERE email = ?",
-            [email]
+            [emailNormalizado]
         );
 
         if (usuarioExistente.length > 0) {
@@ -223,18 +249,31 @@ app.post("/usuarios", async (req, res) => {
 
         const senhaHash = await bcrypt.hash(senha, 10);
 
-       const [resultado] = await pool.execute(
-         `INSERT INTO usuarios
-        (nome, email, senha_hash, perfil,
-        aceite_termo, aceite_privacidade, data_aceite)
-        VALUES (?, ?, ?, 'aluno', 1, 1, CURRENT_TIMESTAMP)`,
-        [nome, email, senhaHash]
+        const [resultado] = await pool.execute(
+            `INSERT INTO usuarios
+            (
+                nome,
+                email,
+                senha_hash,
+                perfil,
+                aceite_termo,
+                aceite_privacidade,
+                data_aceite
+            )
+            VALUES (?, ?, ?, 'aluno', ?, ?, CURRENT_TIMESTAMP)`,
+            [
+                nome.trim(),
+                emailNormalizado,
+                senhaHash,
+                1,
+                1
+            ]
         );
-        
+
         await registrarAuditoria(
             resultado.insertId,
             "CADASTRO_USUARIO",
-            "Novo usuário cadastrado."
+            "Usuário cadastrado e aceites LGPD registrados."
         );
 
         res.status(201).json({
@@ -243,7 +282,6 @@ app.post("/usuarios", async (req, res) => {
         });
 
     } catch (erro) {
-
         console.error("Erro ao cadastrar usuário:", erro);
 
         res.status(500).json({
@@ -547,29 +585,46 @@ app.post("/me/2fa/confirmar", autenticar, async (req, res) => {
 });
 
 app.post("/pfc", autenticar, async (req, res) => {
-
     try {
+        const campos = [
+            "nome_aluno",
+            "curso",
+            "disciplina",
+            "tema",
+            "area_conhecimento",
+            "palavras_chave"
+        ];
 
-        const {
-            nome_aluno,
-            curso,
-            disciplina,
-            tema,
-            area_conhecimento,
-            palavras_chave
-        } = req.body;
+        const limites = {
+            nome_aluno: [3, 100],
+            curso: [2, 100],
+            disciplina: [2, 100],
+            tema: [5, 200],
+            area_conhecimento: [3, 100],
+            palavras_chave: [3, 300]
+        };
 
-        if (
-            !nome_aluno ||
-            !curso ||
-            !disciplina ||
-            !tema ||
-            !area_conhecimento ||
-            !palavras_chave
-        ) {
-            return res.status(400).json({
-                mensagem: "Todos os campos do PFC são obrigatórios."
-            });
+        const dados = {};
+
+        for (const campo of campos) {
+            const valor = req.body[campo];
+
+            if (typeof valor !== "string" || !valor.trim()) {
+                return res.status(400).json({
+                    mensagem: `O campo ${campo} é obrigatório.`
+                });
+            }
+
+            const texto = valor.trim();
+            const [minimo, maximo] = limites[campo];
+
+            if (texto.length < minimo || texto.length > maximo) {
+                return res.status(400).json({
+                    mensagem: `O campo ${campo} deve possuir entre ${minimo} e ${maximo} caracteres.`
+                });
+            }
+
+            dados[campo] = texto;
         }
 
         const [resultado] = await pool.execute(
@@ -585,12 +640,12 @@ app.post("/pfc", autenticar, async (req, res) => {
             )
             VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [
-                nome_aluno,
-                curso,
-                disciplina,
-                tema,
-                area_conhecimento,
-                palavras_chave,
+                dados.nome_aluno,
+                dados.curso,
+                dados.disciplina,
+                dados.tema,
+                dados.area_conhecimento,
+                dados.palavras_chave,
                 req.usuario.id
             ]
         );
@@ -607,7 +662,6 @@ app.post("/pfc", autenticar, async (req, res) => {
         });
 
     } catch (erro) {
-
         console.error("Erro ao cadastrar PFC:", erro);
 
         res.status(500).json({
@@ -654,6 +708,47 @@ app.get("/meus-pfcs", autenticar, async (req, res) => {
     }
 });
 
+/* Consultar todos os PFCs - Administrador */
+app.get("/admin/pfcs", autenticar, async (req, res) => {
+
+    if (req.usuario.perfil !== "admin") {
+        return res.status(403).json({
+            mensagem: "Acesso permitido somente ao administrador."
+        });
+    }
+
+    try {
+        const [pfcs] = await pool.execute(
+            `SELECT
+                c.id,
+                c.nome_aluno,
+                c.curso,
+                c.disciplina,
+                c.tema,
+                c.area_conhecimento,
+                c.palavras_chave,
+                u.nome AS usuario_responsavel
+             FROM cadastro c
+             LEFT JOIN usuarios u ON c.usuario_id = u.id
+             ORDER BY c.id DESC`
+        );
+
+        await registrarAuditoria(
+            req.usuario.id,
+            "CONSULTA_ADMIN_PFCS",
+            "Administrador consultou todos os PFCs."
+        );
+
+        res.json(pfcs);
+
+    } catch (erro) {
+        console.error("Erro ao consultar PFCs do administrador:", erro);
+
+        res.status(500).json({
+            mensagem: "Erro interno ao consultar os PFCs."
+        });
+    }
+});
 
 app.get("/api/bibliografia", autenticar, async (req, res) => {
 
@@ -716,6 +811,54 @@ app.get("/api/bibliografia", autenticar, async (req, res) => {
         });
     }
 });
+
+
+
+/* Dados do painel */
+app.get("/dashboard", autenticar, async (req, res) => {
+
+        if (req.usuario.perfil !== "admin") {
+        return res.status(403).json({
+            mensagem: "Acesso permitido somente ao administrador."
+        });
+    }
+    try {
+        const [usuarios] = await pool.execute(
+            "SELECT COUNT(*) AS total FROM usuarios"
+        );
+
+        const [pfcs] = await pool.execute(
+            "SELECT COUNT(*) AS total FROM cadastro"
+        );
+
+        const [buscas] = await pool.execute(
+            "SELECT COUNT(*) AS total FROM auditoria WHERE acao = ?",
+            ["BUSCA_BIBLIOGRAFICA"]
+        );
+
+        const [pfcsPorCurso] = await pool.execute(
+            `SELECT curso, COUNT(*) AS total
+             FROM cadastro
+             GROUP BY curso
+             ORDER BY total DESC`
+        );
+
+        res.json({
+            totalUsuarios: usuarios[0].total,
+            totalPfcs: pfcs[0].total,
+            totalBuscas: buscas[0].total,
+            pfcsPorCurso: pfcsPorCurso
+        });
+
+    } catch (erro) {
+        console.error("Erro ao carregar dashboard:", erro);
+
+        res.status(500).json({
+            mensagem: "Erro ao carregar os dados do painel."
+        });
+    }
+});
+
 
 
 app.get("/admin/auditoria", autenticar, somenteAdmin, async (req, res) => {
