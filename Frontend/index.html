@@ -1,0 +1,322 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BiblioPFC | Apoio Bibliográfico</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-icon">📚</div>
+      <div>
+        <strong>BiblioPFC</strong>
+        <small>Apoio à pesquisa acadêmica</small>
+      </div>
+    </div>
+    <span class="header-tag">Sistema acadêmico</span>
+  </div>
+</header>
+
+<main class="container">
+
+  <div class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow">SUA PESQUISA COMEÇA AQUI</span>
+      <h1>Sistema de Apoio Bibliográfico para PFCs</h1>
+      <p>
+        Organize seu projeto, encontre publicações científicas
+        e acompanhe sua jornada acadêmica em um só lugar.
+      </p>
+      <div class="hero-chips">
+        <span>Pesquisa bibliográfica</span>
+        <span>Projetos de Final de Curso</span>
+        <span>OpenAlex</span>
+      </div>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <div class="orbit orbit-one"></div>
+      <div class="orbit orbit-two"></div>
+      <div class="book-icon">📖</div>
+      <span class="art-label">Conhecimento que conecta</span>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <section id="areaLogin">
+    <h2>Acesse sua conta</h2>
+    <p class="section-subtitle">
+      Continue sua pesquisa de onde parou.
+    </p>
+
+    <form id="formLogin">
+      <label for="emailLogin">E-mail:</label>
+      <input type="email" id="emailLogin" autocomplete="email" required>
+
+      <label for="senhaLogin">Senha:</label>
+      <input type="password" id="senhaLogin"
+             autocomplete="current-password" required>
+
+      <div id="areaCodigo2fa" style="display:none">
+        <label for="codigo2fa">
+          Código do aplicativo autenticador:
+        </label>
+        <input type="text" id="codigo2fa"
+               inputmode="numeric" maxlength="6"
+               pattern="[0-9]{6}"
+               autocomplete="one-time-code"
+               placeholder="Digite os 6 números">
+      </div>
+
+      <button type="submit">Entrar</button>
+    </form>
+    <p id="mensagemLogin" aria-live="polite"></p>
+  </section>
+
+  <!-- CADASTRO DE USUÁRIO -->
+  <section id="areaCadastroUsuario">
+    <h2>Crie sua conta</h2>
+    <p class="section-subtitle">
+      Comece a organizar suas referências acadêmicas.
+    </p>
+
+    <form id="formUsuario">
+      <label for="nome">Nome:</label>
+      <input type="text" id="nome" autocomplete="name" required>
+
+      <label for="email">E-mail:</label>
+      <input type="email" id="email" autocomplete="email" required>
+
+      <label for="senha">Senha:</label>
+      <input type="password" id="senha" minlength="8"
+             autocomplete="new-password" required>
+
+      
+<div class="lgpd-aceite">
+
+  <label>
+    <input type="checkbox" id="aceite_termo" required>
+    Li e concordo com o
+    <a href="termo-aceite.html" target="_blank"
+       rel="noopener noreferrer">
+      Termo de Aceite
+    </a>.
+  </label>
+
+  <label>
+    <input type="checkbox" id="aceite_privacidade" required>
+    Li e concordo com a
+    <a href="politica-privacidade.html" target="_blank"
+       rel="noopener noreferrer">
+      Política de Privacidade
+    </a>.
+  </label>
+
+</div>
+
+
+      <button type="submit">Criar Conta</button>
+    </form>
+
+    <p id="mensagemCadastro" aria-live="polite"></p>
+  </section>
+
+  <!-- ÁREA DO USUÁRIO -->
+  <section id="areaSistema" style="display:none">
+
+    <div class="dashboard-welcome">
+      <span class="eyebrow">ÁREA DO ESTUDANTE</span>
+      <h2>Seu espaço acadêmico</h2>
+      <p id="usuarioLogado"></p>
+    </div>
+
+
+<!-- DASHBOARD ADMINISTRATIVO -->
+<section id="areaDashboard" style="display:none">
+
+  <div class="dashboard-header">
+    <div>
+      <span class="eyebrow">PAINEL ADMINISTRATIVO</span>
+      <h2>Visão geral do sistema</h2>
+      <p class="section-subtitle">
+        Acompanhe os indicadores do BiblioPFC.
+      </p>
+    </div>
+
+    <button type="button" id="btnAtualizarDashboard">
+      Atualizar indicadores
+    </button>
+  </div>
+
+  <div class="kpi-grid">
+
+    <article class="kpi">
+      <span>Usuários cadastrados</span>
+      <strong id="totalUsuarios">—</strong>
+      <small>Total de usuários</small>
+    </article>
+
+    <article class="kpi">
+      <span>PFCs cadastrados</span>
+      <strong id="totalPfcs">—</strong>
+      <small>Projetos registrados</small>
+    </article>
+
+    <article class="kpi">
+      <span>Pesquisas realizadas</span>
+      <strong id="totalBuscas">—</strong>
+      <small>Buscas bibliográficas</small>
+    </article>
+
+  </div>
+
+  <div class="dashboard-chart">
+    <h3>Distribuição de PFCs por curso</h3>
+    <p class="section-subtitle">
+      Quantidade de projetos cadastrados por curso.
+    </p>
+
+    <div id="graficoCursos"></div>
+  </div>
+
+  <p id="mensagemDashboard" aria-live="polite"></p>
+
+</section>
+
+<!-- CONSULTA ADMINISTRATIVA DE PFCs -->
+<section id="areaAdminPfcs" style="display:none">
+
+  <h2>Gerenciamento de PFCs</h2>
+
+  <p class="section-subtitle">
+    Consulte os projetos cadastrados no sistema.
+  </p>
+
+  <button type="button" id="btnAdminPfcs">
+    Consultar todos os PFCs
+  </button>
+
+  <p id="mensagemAdminPfcs" aria-live="polite"></p>
+
+  <div class="tabela-container">
+    <div id="listaAdminPfcs"></div>
+  </div>
+
+</section>
+
+    <button type="button" id="logoutBtn">Sair</button>
+
+    <!-- 2FA -->
+    <section>
+      <h2>Segurança da conta</h2>
+      <p class="section-subtitle">
+        Proteja seu acesso com uma verificação adicional.
+      </p>
+
+      <button type="button" id="btnIniciar2fa">
+        Configurar 2FA
+      </button>
+
+      <p id="mensagem2fa" aria-live="polite"></p>
+
+      <div id="passos2fa" style="display:none">
+        <p>
+          Adicione esta chave no seu aplicativo autenticador:
+        </p>
+        <code id="segredo2fa"></code>
+
+        <form id="formConfirmar2fa">
+          <label for="codigoConfirmacao2fa">
+            Código de 6 dígitos:
+          </label>
+          <input type="text" id="codigoConfirmacao2fa"
+                 inputmode="numeric" maxlength="6"
+                 pattern="[0-9]{6}" required>
+          <button type="submit">Ativar 2FA</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- CADASTRO PFC -->
+    <section>
+      <h2>Cadastrar projeto</h2>
+      <p class="section-subtitle">
+        Registre as informações principais do seu PFC.
+      </p>
+
+      <form id="formPfc">
+        <label for="nome_aluno">Nome do aluno:</label>
+        <input type="text" id="nome_aluno" required>
+
+        <label for="curso">Curso:</label>
+        <input type="text" id="curso" required>
+
+        <label for="disciplina">Disciplina:</label>
+        <input type="text" id="disciplina" required>
+
+        <label for="tema">Tema do PFC:</label>
+        <input type="text" id="tema" required>
+
+        <label for="area_conhecimento">
+          Área de conhecimento:
+        </label>
+        <input type="text" id="area_conhecimento" required>
+
+        <label for="palavras_chave">Palavras-chave:</label>
+        <input type="text" id="palavras_chave" required>
+
+        <button type="submit">Cadastrar PFC</button>
+      </form>
+
+      <p id="mensagem" aria-live="polite"></p>
+    </section>
+
+    <!-- MEUS PROJETOS -->
+    <section>
+      <h2>Meus projetos</h2>
+      <p class="section-subtitle">
+        Acompanhe os PFCs que você cadastrou.
+      </p>
+
+      <button type="button" id="btnMeusPfcs">
+        Consultar Meus PFCs
+      </button>
+
+      <div id="meusPfcs"></div>
+    </section>
+
+    <!-- BUSCA BIBLIOGRÁFICA -->
+    <section>
+      <h2>Explorar publicações</h2>
+      <p class="section-subtitle">
+        Encontre materiais científicos pelo tema ou palavra-chave.
+      </p>
+
+      <form id="formBusca">
+        <label for="temaBusca">Tema ou palavra-chave:</label>
+        <input type="text" id="temaBusca" required>
+
+        <button type="submit">Buscar Bibliografia</button>
+      </form>
+
+      <div id="resultadosBibliografia" aria-live="polite"></div>
+    </section>
+
+  </section>
+</main>
+
+<footer class="site-footer">
+  <span>© 2026 BiblioPFC · Projeto acadêmico</span>
+  <span>
+    <a href="termo-aceite.html">Termos de Uso</a> ·
+    <a href="politica-privacidade.html">Privacidade</a>
+  </span>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
